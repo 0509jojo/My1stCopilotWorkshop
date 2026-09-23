@@ -1,0 +1,132 @@
+// ===== 我的待辦清單 =====
+// 純前端實作,不使用任何框架或套件,資料儲存在瀏覽器的 localStorage。
+
+const STORAGE_KEY = 'my1st-copilot-workshop-todos';
+
+// 取得畫面上的元素
+const form = document.getElementById('todo-form');
+const input = document.getElementById('todo-input');
+const list = document.getElementById('todo-list');
+const emptyState = document.getElementById('empty-state');
+const remainingCount = document.getElementById('remaining-count');
+
+// 每筆待辦的格式:{ id: '...', text: '...', completed: false }
+let todos = loadTodos();
+
+// ---------- 資料存取 ----------
+
+/** 從 localStorage 讀取待辦清單,格式不正確時回傳空陣列。 */
+function loadTodos() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    const parsed = saved ? JSON.parse(saved) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.warn('讀取待辦清單失敗,將以空清單開始。', error);
+    return [];
+  }
+}
+
+/** 將目前的待辦清單寫回 localStorage。 */
+function saveTodos() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+}
+
+// ---------- 畫面繪製 ----------
+
+/** 根據 todos 陣列重新繪製清單與統計數字。 */
+function render() {
+  list.replaceChildren();
+
+  todos.forEach((todo) => {
+    const item = document.createElement('li');
+    item.className = todo.completed ? 'todo-item completed' : 'todo-item';
+    item.dataset.id = todo.id;
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = todo.completed;
+    checkbox.setAttribute('aria-label', `標記「${todo.text}」為完成`);
+
+    const text = document.createElement('span');
+    text.className = 'todo-text';
+    text.textContent = todo.text;
+
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'btn-delete';
+    deleteButton.textContent = '刪除';
+    deleteButton.setAttribute('aria-label', `刪除「${todo.text}」`);
+
+    item.append(checkbox, text, deleteButton);
+    list.append(item);
+  });
+
+  emptyState.hidden = todos.length > 0;
+  const remaining = todos.filter((todo) => !todo.completed).length;
+  remainingCount.textContent = `未完成:${remaining} 項`;
+}
+
+// ---------- 操作行為 ----------
+
+/** 產生一組不重複的待辦 id。 */
+function createId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/** 新增待辦事項。 */
+function addTodo(text) {
+  todos.push({
+    id: createId(),
+    text,
+    completed: false,
+  });
+  saveTodos();
+  render();
+}
+
+/** 切換待辦事項的完成狀態。 */
+function toggleTodo(id) {
+  todos = todos.map((todo) =>
+    todo.id === id ? { ...todo, completed: !todo.completed } : todo
+  );
+  saveTodos();
+  render();
+}
+
+/** 刪除待辦事項。 */
+function deleteTodo(id) {
+  todos = todos.filter((todo) => todo.id !== id);
+  saveTodos();
+  render();
+}
+
+// ---------- 事件綁定 ----------
+
+// 表單送出時新增待辦,空白內容不會被加入清單。
+form.addEventListener('submit', (event) => {
+  event.preventDefault();
+
+  const text = input.value.trim();
+  if (!text) return;
+
+  addTodo(text);
+  input.value = '';
+  input.focus();
+});
+
+// 使用事件委派處理清單中的勾選與刪除。
+list.addEventListener('click', (event) => {
+  const item = event.target.closest('.todo-item');
+  if (!item) return;
+
+  const id = item.dataset.id;
+  if (event.target.matches('input[type="checkbox"]')) {
+    toggleTodo(id);
+  } else if (event.target.matches('.btn-delete')) {
+    deleteTodo(id);
+  }
+});
+
+// 頁面載入時繪製已儲存的待辦清單。
+render();
