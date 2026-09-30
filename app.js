@@ -14,6 +14,7 @@ const filterButtons = document.querySelectorAll('.btn-filter');
 const themeToggle = document.getElementById('theme-toggle');
 const themeIcon = document.getElementById('theme-icon');
 const themeLabel = document.getElementById('theme-label');
+const clearCompletedButton = document.getElementById('clear-completed');
 
 // 所有待辦事項都放在這個陣列裡
 // 每一筆的格式:{ id: '169...', text: '買牛奶', completed: false }
@@ -136,6 +137,7 @@ function render() {
   // 更新未完成數量(不受篩選影響,永遠是整體數量)
   const remaining = todos.filter((todo) => !todo.completed).length;
   remainingCount.textContent = `未完成:${remaining} 項`;
+  clearCompletedButton.disabled = !todos.some((todo) => todo.completed);
 }
 
 // ---------- 操作行為 ----------
@@ -168,6 +170,19 @@ function toggleTodo(id) {
 /** 刪除某一筆待辦 */
 function deleteTodo(id) {
   todos = todos.filter((todo) => todo.id !== id);
+  saveTodos();
+  render();
+}
+
+/** 清除所有已完成的待辦事項。 */
+function clearCompleted() {
+  const completedCount = todos.filter((todo) => todo.completed).length;
+  if (completedCount === 0) return;
+
+  const confirmed = window.confirm(`確定要清除 ${completedCount} 個已完成的待辦事項嗎？`);
+  if (!confirmed) return;
+
+  todos = todos.filter((todo) => !todo.completed);
   saveTodos();
   render();
 }
@@ -217,6 +232,8 @@ list.addEventListener('click', (event) => {
 filterButtons.forEach((button) => {
   button.addEventListener('click', () => setFilter(button.dataset.filter));
 });
+
+clearCompletedButton.addEventListener('click', clearCompleted);
 
 // 深色模式切換,並把選擇記在 localStorage
 themeToggle.addEventListener('click', () => {

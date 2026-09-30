@@ -244,6 +244,28 @@ h1 {
   color: var(--text-muted);
 }
 
+.btn-clear {
+  display: block;
+  margin: 10px auto 0;
+  padding: 6px 10px;
+  color: var(--danger);
+  background: transparent;
+  border: 1px solid var(--danger);
+  border-radius: 6px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.btn-clear:hover:not(:disabled) {
+  color: var(--surface);
+  background: var(--danger);
+}
+
+.btn-clear:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ---------- 無障礙:僅供螢幕閱讀器 ---------- */
 .sr-only {
   position: absolute;
